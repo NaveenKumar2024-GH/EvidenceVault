@@ -110,16 +110,7 @@ export function App() {
     }
   }, [addToast])
 
-  const silentRefreshRecords = useCallback(async () => {
-  try {
-    const response = await getAllEvidence()
-
-    setRecords(response.evidence || [])
-    setIsBackendConnected(true)
-  } catch (error) {
-    console.error('Automatic evidence refresh failed:', error)
-  }
-}, [])
+  
 
   // Background reload after mutations
   const silentReload = useCallback(async () => {
