@@ -43,37 +43,49 @@ export function App() {
   }, [])
 
   // Initial mount load
-  useEffect(() => {
-    let ignore = false
+ useEffect(() => {
+  let ignore = false
 
-    async function initialLoad() {
-      try {
-        const [evidenceData] = await Promise.all([
-          getAllEvidence(),
-          checkBackendHealth().catch(() => null),
-        ])
-        if (!ignore) {
-          setRecords(evidenceData.evidence || [])
-          setIsBackendConnected(true)
-          setIsLoading(false)
-        }
-      } catch (err: unknown) {
-        if (!ignore) {
-          setIsBackendConnected(false)
-          const msg = err instanceof Error ? err.message : 'Unable to connect to EvidenceVault API'
-          setBackendError(msg)
-          setIsLoading(false)
-        }
+  async function loadEvidence() {
+    try {
+      const [evidenceData] = await Promise.all([
+        getAllEvidence(),
+        checkBackendHealth().catch(() => null),
+      ])
+
+      if (!ignore) {
+        setRecords(evidenceData.evidence || [])
+        setIsBackendConnected(true)
+        setIsLoading(false)
+      }
+    } catch (err: unknown) {
+      if (!ignore) {
+        setIsBackendConnected(false)
+
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'Unable to connect to EvidenceVault API'
+
+        setBackendError(msg)
+        setIsLoading(false)
       }
     }
+  }
 
-    initialLoad()
+  // Initial load
+  loadEvidence()
 
-    return () => {
-      ignore = true
-    }
-  }, [])
+  // Refresh dashboard every 5 seconds
+  const interval = window.setInterval(() => {
+    loadEvidence()
+  }, 5000)
 
+  return () => {
+    ignore = true
+    window.clearInterval(interval)
+  }
+}, [])
   // Manual refresh callback
   const refreshRecords = useCallback(async () => {
     setIsRefreshing(true)
@@ -97,6 +109,17 @@ export function App() {
       setIsRefreshing(false)
     }
   }, [addToast])
+
+  const silentRefreshRecords = useCallback(async () => {
+  try {
+    const response = await getAllEvidence()
+
+    setRecords(response.evidence || [])
+    setIsBackendConnected(true)
+  } catch (error) {
+    console.error('Automatic evidence refresh failed:', error)
+  }
+}, [])
 
   // Background reload after mutations
   const silentReload = useCallback(async () => {
@@ -270,7 +293,7 @@ export function App() {
                 }}
               >
                 <Lock size={12} />
-                <span>Forensic Chain of Custody System • Hackathon Ready</span>
+                <span>SHA-256 Integrity & Chain of Custody</span>
               </div>
               <h1
                 style={{
@@ -292,8 +315,8 @@ export function App() {
                 }}
               >
                 Tamper-evident verification platform for digital forensics. Every uploaded piece of evidence is
-                fingerprinted using SHA-256, logged with an immutable audit trail, and continuously verified against
-                unauthorized file modifications.
+                fingerprinted using SHA-256, logged with a tamper-evident custody trail, and can be re-verified
+                on demand to detect unauthorized file modifications.
               </p>
             </div>
 

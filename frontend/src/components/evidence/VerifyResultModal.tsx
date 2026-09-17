@@ -76,8 +76,8 @@ export const VerifyResultModal: React.FC<VerifyResultModalProps> = ({
               </div>
               <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
                 {isVerified
-                  ? 'FIPS 180-4 SHA-256 cryptographic verification passed with 100% bit parity.'
-                  : 'Critical Forensic Alert: SHA-256 fingerprint mismatch detected! Data integrity has been altered.'}
+                  ? 'SHA-256 re-verification passed — current file hash matches the registered fingerprint.'
+                  : 'SHA-256 mismatch detected — the file has been altered since it was registered.'}
               </div>
             </div>
           </div>
@@ -177,7 +177,7 @@ export const VerifyResultModal: React.FC<VerifyResultModalProps> = ({
           }}
         >
           <div style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
-            Status recorded in SQLite database at `{result.status}`
+            Status updated in backend database: <strong style={{ color: 'var(--text-muted)' }}>{result.status}</strong>
           </div>
           <button
             type="button"

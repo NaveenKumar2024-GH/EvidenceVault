@@ -1,4 +1,5 @@
 import type {
+  AuditLogResponse,
   CustodyHistoryResponse,
   EvidenceListResponse,
   EvidenceRecord,
@@ -72,6 +73,18 @@ export async function getCustodyHistory(evidenceId: string): Promise<CustodyHist
  * Verify cryptographic hash integrity of evidence
  * POST /evidence/{evidence_id}/verify
  */
+/**
+ * Fetch system audit logs for specific evidence
+ * GET /evidence/{evidence_id}/audit
+ */
+export async function getAuditLogs(evidenceId: string): Promise<AuditLogResponse> {
+  const res = await fetch(`${API_BASE}/evidence/${encodeURIComponent(evidenceId)}/audit`, {
+    headers: { Accept: 'application/json' },
+  })
+
+  return handleResponse<AuditLogResponse>(res)
+}
+
 export async function verifyEvidence(evidenceId: string): Promise<VerifyResponse> {
   const res = await fetch(`${API_BASE}/evidence/${encodeURIComponent(evidenceId)}/verify`, {
     method: 'POST',
@@ -106,9 +119,16 @@ export async function uploadEvidence(
  * Check backend health status
  * GET /health
  */
-export async function checkBackendHealth(): Promise<{ status: string }> {
+export async function checkBackendHealth(): Promise<{
+  status: string
+  integrity_watcher: 'running' | 'stopped'
+}> {
   const res = await fetch(`${API_BASE}/health`, {
     headers: { Accept: 'application/json' },
   })
-  return handleResponse<{ status: string }>(res)
+
+  return handleResponse<{
+    status: string
+    integrity_watcher: 'running' | 'stopped'
+  }>(res)
 }

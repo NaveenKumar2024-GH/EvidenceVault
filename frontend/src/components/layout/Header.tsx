@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-dim)' }}>
-                Immutable Digital Evidence Management & Cryptographic Chain of Custody
+                Tamper-Evident Digital Evidence Management & SHA-256 Chain of Custody
               </span>
             </div>
           </div>

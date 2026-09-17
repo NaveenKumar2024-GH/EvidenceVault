@@ -27,20 +27,20 @@ export const Footer: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
             <Lock size={14} color="#06b6d4" />
-            <span>FIPS 180-4 SHA-256 Cryptographic Integrity</span>
+            <span>SHA-256 Integrity Verification</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
             <Shield size={14} color="#10b981" />
-            <span>Immutable Chain of Custody Audit Trail</span>
+            <span>Tamper-Evident Chain of Custody Log</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)' }}>
             <Hash size={14} color="#f59e0b" />
-            <span>RFC 3161 Evidence Timestamping</span>
+            <span>ISO 8601 Evidence Timestamping</span>
           </div>
         </div>
 
         <div>
-          <span>EvidenceVault Forensics System • Hackathon Edition</span>
+          <span>EvidenceVault Forensics System • v1.0</span>
         </div>
       </div>
     </footer>

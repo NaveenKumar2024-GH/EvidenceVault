@@ -10,6 +10,7 @@ def get_connection():
 
 
 def initialize_database():
+
     connection = get_connection()
 
     connection.execute("""
@@ -34,6 +35,18 @@ def initialize_database():
             performed_by TEXT NOT NULL,
             timestamp TEXT NOT NULL,
             notes TEXT
+        )
+    """)
+
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evidence_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            performed_by TEXT NOT NULL,
+            ip_address TEXT NOT NULL,
+            timestamp TEXT NOT NULL,
+            details TEXT
         )
     """)
 

@@ -31,6 +31,21 @@ export interface CustodyHistoryResponse {
   custody_events: CustodyEvent[]
 }
 
+export interface AuditLog {
+  id: number
+  evidence_id: string
+  action: string
+  performed_by: string
+  ip_address: string
+  timestamp: string
+  details: string | null
+}
+
+export interface AuditLogResponse {
+  evidence_id: string
+  audit_logs: AuditLog[]
+}
+
 export interface VerifyResponse {
   evidence_id: string
   original_sha256: string
@@ -57,4 +72,9 @@ export interface SystemStats {
   verified: number
   compromised: number
   integrityPercentage: number
+}
+
+export interface BackendHealth {
+  status: string
+  integrity_watcher: 'running' | 'stopped'
 }
