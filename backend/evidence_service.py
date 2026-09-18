@@ -1,6 +1,6 @@
 import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def calculate_sha256(file_bytes: bytes) -> str:
@@ -12,4 +12,4 @@ def generate_evidence_id() -> str:
 
 
 def get_timestamp() -> str:
-    return datetime.now().isoformat()
+    return datetime.now(timezone.utc).isoformat()   

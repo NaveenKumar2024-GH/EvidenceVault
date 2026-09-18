@@ -120,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
               }}
             />
             <Database size={13} />
-            <span>{isBackendConnected ? 'FastAPI 127.0.0.1:8000' : 'Backend Disconnected'}</span>
+            <span>{isBackendConnected ? 'FastAPI Backend Connected' : 'Backend Disconnected'}</span>
           </div>
 
           {/* Refresh Button */}
