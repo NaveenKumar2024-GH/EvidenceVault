@@ -2,6 +2,7 @@ import os
 import threading
 import time
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,14 +10,21 @@ from database import initialize_database, get_connection
 from evidence_service import (
     calculate_sha256,
     generate_evidence_id,
-    get_timestamp
+    get_timestamp,
 )
 
+# Load variables from backend/.env
+load_dotenv()
+
+
+# ---------------------------------------------------------
+# FastAPI Application
+# ---------------------------------------------------------
 
 app = FastAPI(
     title="EvidenceVault API",
     description="Digital Evidence Management and Integrity Platform",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 
@@ -27,16 +35,38 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:5174",
-    "http://127.0.0.1:5174",
-    "https://evidence-vault-beta.vercel.app",
-],
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "https://evidence-vault-beta.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------
+# API Keys
+# ---------------------------------------------------------
+
+INVESTIGATOR_KEY = os.environ.get("EVIDENCEVAULT_INVESTIGATOR_KEY")
+ADMIN_KEY = os.environ.get("EVIDENCEVAULT_ADMIN_KEY")
+
+
+def require_role(request: Request, allowed_keys: list) -> None:
+    valid_keys = [key for key in allowed_keys if key]
+
+    # If keys are configured, require a valid key.
+    if valid_keys:
+        supplied_key = request.headers.get("x-api-key")
+
+        if supplied_key not in valid_keys:
+            raise HTTPException(
+                status_code=401,
+                detail="Missing or invalid API key for this action.",
+            )
 
 
 # ---------------------------------------------------------
@@ -47,7 +77,7 @@ EVIDENCE_DIRECTORY = "evidence_files"
 
 os.makedirs(
     EVIDENCE_DIRECTORY,
-    exist_ok=True
+    exist_ok=True,
 )
 
 
@@ -113,7 +143,7 @@ def integrity_watcher():
 
                 file_path = os.path.join(
                     EVIDENCE_DIRECTORY,
-                    evidence_id
+                    evidence_id,
                 )
 
                 # -------------------------------------------------
@@ -134,8 +164,8 @@ def integrity_watcher():
                             """,
                             (
                                 "COMPROMISED",
-                                evidence_id
-                            )
+                                evidence_id,
+                            ),
                         )
 
                         connection.execute(
@@ -157,8 +187,8 @@ def integrity_watcher():
                                 "INTEGRITY_WATCHER",
                                 "LOCAL_SYSTEM",
                                 timestamp,
-                                "Evidence file missing from secure storage"
-                            )
+                                "Evidence file missing from secure storage",
+                            ),
                         )
 
                         print(
@@ -173,15 +203,12 @@ def integrity_watcher():
                 # -------------------------------------------------
 
                 try:
-
                     with open(
                         file_path,
-                        "rb"
+                        "rb",
                     ) as evidence_file:
 
-                        current_file_bytes = (
-                            evidence_file.read()
-                        )
+                        current_file_bytes = evidence_file.read()
 
                     current_hash = calculate_sha256(
                         current_file_bytes
@@ -216,8 +243,8 @@ def integrity_watcher():
                             """,
                             (
                                 "COMPROMISED",
-                                evidence_id
-                            )
+                                evidence_id,
+                            ),
                         )
 
                         connection.execute(
@@ -239,8 +266,8 @@ def integrity_watcher():
                                 "INTEGRITY_WATCHER",
                                 "LOCAL_SYSTEM",
                                 timestamp,
-                                "Evidence file hash changed during background integrity scan"
-                            )
+                                "Evidence file hash changed during background integrity scan",
+                            ),
                         )
 
                         print(
@@ -272,7 +299,7 @@ def start_integrity_watcher():
         watcher_thread = threading.Thread(
             target=integrity_watcher,
             daemon=True,
-            name="EvidenceIntegrityWatcher"
+            name="EvidenceIntegrityWatcher",
         )
 
         watcher_thread.start()
@@ -309,20 +336,27 @@ def health():
             "running"
             if watcher_running
             else "stopped"
-        )
+        ),
     }
 
 
 # ---------------------------------------------------------
 # Upload Evidence
+# Investigator or Admin
 # ---------------------------------------------------------
 
 @app.post("/evidence/upload")
 async def upload_evidence(
+    request: Request,
     file: UploadFile = File(...),
     evidence_type: str = Form(...),
-    uploaded_by: str = Form(...)
+    uploaded_by: str = Form(...),
 ):
+
+    require_role(
+        request,
+        [INVESTIGATOR_KEY, ADMIN_KEY],
+    )
 
     file_bytes = await file.read()
 
@@ -336,12 +370,12 @@ async def upload_evidence(
 
     file_path = os.path.join(
         EVIDENCE_DIRECTORY,
-        evidence_id
+        evidence_id,
     )
 
     with open(
         file_path,
-        "wb"
+        "wb",
     ) as evidence_file:
 
         evidence_file.write(
@@ -373,8 +407,8 @@ async def upload_evidence(
             len(file_bytes),
             uploaded_by,
             timestamp,
-            "REGISTERED"
-        )
+            "REGISTERED",
+        ),
     )
 
     connection.execute(
@@ -394,8 +428,8 @@ async def upload_evidence(
             "EVIDENCE_REGISTERED",
             uploaded_by,
             timestamp,
-            "Evidence uploaded and SHA-256 fingerprint generated"
-        )
+            "Evidence uploaded and SHA-256 fingerprint generated",
+        ),
     )
 
     connection.commit()
@@ -410,7 +444,7 @@ async def upload_evidence(
         "file_size": len(file_bytes),
         "uploaded_by": uploaded_by,
         "uploaded_at": timestamp,
-        "status": "REGISTERED"
+        "status": "REGISTERED",
     }
 
 
@@ -438,7 +472,7 @@ def get_all_evidence():
         "evidence": [
             dict(record)
             for record in records
-        ]
+        ],
     }
 
 
@@ -448,7 +482,7 @@ def get_all_evidence():
 
 @app.get("/evidence/{evidence_id}")
 def get_evidence(
-    evidence_id: str
+    evidence_id: str,
 ):
 
     connection = get_connection()
@@ -459,7 +493,7 @@ def get_evidence(
         FROM evidence
         WHERE evidence_id = ?
         """,
-        (evidence_id,)
+        (evidence_id,),
     ).fetchone()
 
     connection.close()
@@ -468,7 +502,7 @@ def get_evidence(
 
         raise HTTPException(
             status_code=404,
-            detail="Evidence not found"
+            detail="Evidence not found",
         )
 
     return dict(record)
@@ -480,7 +514,7 @@ def get_evidence(
 
 @app.get("/evidence/{evidence_id}/custody")
 def get_custody_history(
-    evidence_id: str
+    evidence_id: str,
 ):
 
     connection = get_connection()
@@ -492,7 +526,7 @@ def get_custody_history(
         WHERE evidence_id = ?
         ORDER BY timestamp ASC
         """,
-        (evidence_id,)
+        (evidence_id,),
     ).fetchall()
 
     connection.close()
@@ -501,7 +535,7 @@ def get_custody_history(
 
         raise HTTPException(
             status_code=404,
-            detail="No custody history found"
+            detail="No custody history found",
         )
 
     return {
@@ -509,19 +543,25 @@ def get_custody_history(
         "custody_events": [
             dict(record)
             for record in records
-        ]
+        ],
     }
 
 
 # ---------------------------------------------------------
 # Verify Evidence
+# Investigator or Admin
 # ---------------------------------------------------------
 
 @app.post("/evidence/{evidence_id}/verify")
 def verify_evidence(
     evidence_id: str,
-    request: Request
+    request: Request,
 ):
+
+    require_role(
+        request,
+        [INVESTIGATOR_KEY, ADMIN_KEY],
+    )
 
     connection = get_connection()
 
@@ -531,7 +571,7 @@ def verify_evidence(
         FROM evidence
         WHERE evidence_id = ?
         """,
-        (evidence_id,)
+        (evidence_id,),
     ).fetchone()
 
     if record is None:
@@ -540,12 +580,12 @@ def verify_evidence(
 
         raise HTTPException(
             status_code=404,
-            detail="Evidence not found"
+            detail="Evidence not found",
         )
 
     file_path = os.path.join(
         EVIDENCE_DIRECTORY,
-        evidence_id
+        evidence_id,
     )
 
     if not os.path.exists(file_path):
@@ -554,17 +594,15 @@ def verify_evidence(
 
         raise HTTPException(
             status_code=404,
-            detail="Evidence file not found"
+            detail="Evidence file not found",
         )
 
     with open(
         file_path,
-        "rb"
+        "rb",
     ) as evidence_file:
 
-        current_file_bytes = (
-            evidence_file.read()
-        )
+        current_file_bytes = evidence_file.read()
 
     current_hash = calculate_sha256(
         current_file_bytes
@@ -615,8 +653,8 @@ def verify_evidence(
             record["uploaded_by"],
             client_ip,
             audit_timestamp,
-            message
-        )
+            message,
+        ),
     )
 
     connection.execute(
@@ -627,8 +665,8 @@ def verify_evidence(
         """,
         (
             status,
-            evidence_id
-        )
+            evidence_id,
+        ),
     )
 
     connection.commit()
@@ -639,18 +677,25 @@ def verify_evidence(
         "original_sha256": original_hash,
         "current_sha256": current_hash,
         "status": status,
-        "message": message
+        "message": message,
     }
 
 
 # ---------------------------------------------------------
 # Audit Logs
+# Admin Only
 # ---------------------------------------------------------
 
 @app.get("/evidence/{evidence_id}/audit")
 def get_audit_logs(
-    evidence_id: str
+    evidence_id: str,
+    request: Request,
 ):
+
+    require_role(
+        request,
+        [ADMIN_KEY],
+    )
 
     connection = get_connection()
 
@@ -661,7 +706,7 @@ def get_audit_logs(
         WHERE evidence_id = ?
         ORDER BY timestamp ASC
         """,
-        (evidence_id,)
+        (evidence_id,),
     ).fetchall()
 
     connection.close()
@@ -670,7 +715,7 @@ def get_audit_logs(
 
         raise HTTPException(
             status_code=404,
-            detail="No audit logs found"
+            detail="No audit logs found",
         )
 
     return {
@@ -678,5 +723,5 @@ def get_audit_logs(
         "audit_logs": [
             dict(record)
             for record in records
-        ]
+        ],
     }

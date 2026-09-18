@@ -88,7 +88,9 @@ export async function getAuditLogs(evidenceId: string): Promise<AuditLogResponse
 export async function verifyEvidence(evidenceId: string): Promise<VerifyResponse> {
   const res = await fetch(`${API_BASE}/evidence/${encodeURIComponent(evidenceId)}/verify`, {
     method: 'POST',
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json',
+  'x-api-key': import.meta.env.VITE_ADMIN_KEY,
+ },
   })
   return handleResponse<VerifyResponse>(res)
 }
@@ -110,7 +112,7 @@ export async function uploadEvidence(
   const res = await fetch(`${API_BASE}/evidence/upload`, {
     method: 'POST',
     body: formData,
-    headers: { Accept: 'application/json' },
+    headers: { Accept: 'application/json', 'x-api-key': import.meta.env.VITE_INVESTIGATOR_KEY,},
   })
   return handleResponse<UploadResponse>(res)
 }
